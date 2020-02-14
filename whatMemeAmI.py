@@ -102,8 +102,8 @@ if __name__ == "__main__":
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
 
-    width_frame = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH )
-    height_frame = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
+    frameWidth = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH )
+    frameHeight = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
 
     # Initialize some variables
     face_locations = []
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     t = 0
     j = 0
     while True:
-        print(t)
+        #print(t)
 
         # Grab a single frame of video
         ret, frame = video_capture.read()
@@ -144,33 +144,50 @@ if __name__ == "__main__":
                     faceRight *= 4
                     faceBottom *= 4
                     faceLeft *= 4
-
+                    
+                    # debug face location
+                    print("top:", faceTop, "right:", faceRight, "bottom:", faceBottom, "left:", faceLeft)
+                    
                     # Draw a box around the face
                     #cv2.rectangle(frame, (faceLeft, faceTop), (faceRight, faceBottom), (0, 0, 255), 2)
-
-                    centerMiddle = faceLeft + int((faceRight-faceLeft)/2) - 100
                     
+                    centerMiddle = faceLeft
+                    #centerMiddle = faceLeft + int((faceRight-faceLeft)/2) - 100
+                    #print(centerMiddle)
+                    
+                    imgLeft = int((faceLeft+faceRight-imgWidth)/2)
+                    imgRight = int((faceLeft+faceRight+imgWidth)/2)
+                    imgTop = faceTop-imgHeight
+                    imgBottom = faceTop
+
+                    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, 1, 1)[0]
+                    textLeft = int((faceLeft+faceRight-textWidth)/2)
+                    textRight = int((faceLeft+faceRight+textWidth)/2)
+                    textTop = faceTop
+                    textBottom = faceTop+textHeight
+
                     # the meme image fits in the video capture
-                    if (faceTop >= imgHeight and centerMiddle >= 0 and (centerMiddle+imgWidth) <= width_frame ):
-                        # create rectangle for image (from lower-faceLeft to upper-right corner)
-                        cv2.rectangle(frame, (centerMiddle, faceTop-imgHeight), (centerMiddle+imgWidth, faceTop), (0, 0, 255), 2)
+                    #if (faceTop >= imgHeight and centerMiddle >= 0 and (centerMiddle+imgWidth) <= frameWidth ):
+                    if (faceTop >= imgHeight and imgLeft >= 0 and imgRight <= frameWidth ):
+                        #  create rectangle for image (from upper-left to bottom-right corner)
+                        cv2.rectangle(frame, (imgLeft, imgTop), (imgRight, imgBottom), (0, 0, 255), 2)
                         # create rectangle for queryy
-                        cv2.rectangle(frame, (centerMiddle, faceTop), (centerMiddle+imgWidth, faceTop+20), (0, 0, 255), cv2.FILLED)
-                        cv2.putText(frame, query, (centerMiddle + 8, faceTop + 16), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+                        cv2.rectangle(frame, (textLeft, textTop), (textRight, textBottom), (0, 0, 255), cv2.FILLED)
+                        cv2.putText(frame, query, (textLeft, textBottom), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
                     
                         if (t < 60):
                             # iterate randomly through meme dataset
                             randomArray = np.random.permutation(len(data))
                             for i in randomArray:
-                                frame[faceTop-imgHeight:faceTop, centerMiddle:centerMiddle+imgWidth] = data[i]
+                                frame[imgTop:imgBottom, imgLeft:imgRight] = data[i]
                         elif (t < 50):
-                            frame[faceTop-imgHeight:faceTop, centerMiddle:centerMiddle+imgWidth] = data[randomArray[0]]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[0]]
                         elif (t < 52):
-                            frame[faceTop-imgHeight:faceTop, centerMiddle:centerMiddle+imgWidth] = data[randomArray[1]]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[1]]
                         elif (t < 55):
-                            frame[faceTop-imgHeight:faceTop, centerMiddle:centerMiddle+imgWidth] = data[randomArray[2]]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[2]]
                         else:
-                            frame[faceTop-imgHeight:faceTop, centerMiddle:centerMiddle+imgWidth] = data[randomArray[0]]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[0]]
         else:
             t = 0;
 
