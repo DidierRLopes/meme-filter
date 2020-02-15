@@ -160,9 +160,12 @@ if __name__ == "__main__":
                     imgTop = faceTop-imgHeight
                     imgBottom = faceTop
 
-                    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, 1, 1)[0]
+                    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, 0.7, 1)[0]
+                    #print("textWidth ", textWidth, "textHeight", textHeight)
+                    
                     textLeft = int((faceLeft+faceRight-textWidth)/2)
                     textRight = int((faceLeft+faceRight+textWidth)/2)
+                    #print("textLeft ", textLeft, "textRight", textRight)
                     textTop = faceTop
                     textBottom = faceTop+textHeight
 
@@ -171,9 +174,10 @@ if __name__ == "__main__":
                     if (faceTop >= imgHeight and imgLeft >= 0 and imgRight <= frameWidth ):
                         #  create rectangle for image (from upper-left to bottom-right corner)
                         cv2.rectangle(frame, (imgLeft, imgTop), (imgRight, imgBottom), (0, 0, 255), 2)
-                        # create rectangle for queryy
-                        cv2.rectangle(frame, (textLeft, textTop), (textRight, textBottom), (0, 0, 255), cv2.FILLED)
-                        cv2.putText(frame, query, (textLeft, textBottom), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+                        # create rectangle for query
+                        border=6
+                        cv2.rectangle(frame, (textLeft-border, textTop), (textRight+border, textBottom+2*border), (0, 0, 255), cv2.FILLED)
+                        cv2.putText(frame, query, (textLeft, textBottom+border), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1)
                     
                         if (t < 60):
                             # iterate randomly through meme dataset
