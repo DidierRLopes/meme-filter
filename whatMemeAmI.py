@@ -96,88 +96,73 @@ if __name__ == "__main__":
         img = cv2.resize(img_original, (imgWidth, imgHeight))
         data.append(img)
 
-
-    #print(data)
+    # Check that there is actually images, otherwise use a sad image perhaps?
 
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
-
     frameWidth = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH )
     frameHeight = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
-
-    # Initialize some variables
-    face_locations = []
+   
+    # Get text size from query
+    queryThickness = 0.7
+    queryBorder = 6
+    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, queryThickness, 1)[0]
+    
+    if (imgWidth > (frameWidth/2) or textWidth > (frameWidth/2) or imgHeight > (frameHeight/2)):
+        print("Either reduce the size of the image, or select a shorter query")
+        sys.exit(2)
+    
+    faceLocations = []
     process_this_frame = True
 
-    #di_img = cv2.imread("memes_1/didi.jpeg")
-    #di_img = cv2.resize(data[2], (200, 200))
-
     t = 0
-    j = 0
     while True:
-        #print(t)
-
         # Grab a single frame of video
         ret, frame = video_capture.read()
 
-        # Resize frame of video to 1/4 size for faster face recognition processing
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-
-        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-        rgb_small_frame = small_frame[:, :, ::-1]
 
         # Only process every other frame of video to save time
         if process_this_frame:
+            # Resize frame of video to 1/4 size for faster face recognition processing
+            smallFrame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+            rgbSmallFrame = smallFrame[:, :, ::-1]
             # Find all the faces and face encodings in the current frame of video
-            face_locations = face_recognition.face_locations(rgb_small_frame)
+            faceLocations = face_recognition.face_locations(rgbSmallFrame)
      
         process_this_frame = not process_this_frame
 
-        if (len(face_locations) > 0):
+        if (len(faceLocations) > 0):
             t = t+1;
 
             if (t > 20):
                 # Display the results
-                for (faceTop, faceRight, faceBottom, faceLeft) in face_locations:
+                for (faceTop, faceRight, faceBottom, faceLeft) in faceLocations:
                     # Scale back up face locations since the frame we detected in was scaled to 1/4 size
                     faceTop *= 4
                     faceRight *= 4
                     faceBottom *= 4
                     faceLeft *= 4
-                    
-                    # debug face location
-                    print("top:", faceTop, "right:", faceRight, "bottom:", faceBottom, "left:", faceLeft)
-                    
-                    # Draw a box around the face
-                    #cv2.rectangle(frame, (faceLeft, faceTop), (faceRight, faceBottom), (0, 0, 255), 2)
-                    
-                    centerMiddle = faceLeft
-                    #centerMiddle = faceLeft + int((faceRight-faceLeft)/2) - 100
-                    #print(centerMiddle)
-                    
+                   
+                    # Extract image location based on recognized face
                     imgLeft = int((faceLeft+faceRight-imgWidth)/2)
                     imgRight = int((faceLeft+faceRight+imgWidth)/2)
                     imgTop = faceTop-imgHeight
                     imgBottom = faceTop
 
-                    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, 0.7, 1)[0]
-                    #print("textWidth ", textWidth, "textHeight", textHeight)
-                    
+                    # Extract query location based on recognized face
                     textLeft = int((faceLeft+faceRight-textWidth)/2)
                     textRight = int((faceLeft+faceRight+textWidth)/2)
-                    #print("textLeft ", textLeft, "textRight", textRight)
                     textTop = faceTop
                     textBottom = faceTop+textHeight
 
-                    # the meme image fits in the video capture
-                    #if (faceTop >= imgHeight and centerMiddle >= 0 and (centerMiddle+imgWidth) <= frameWidth ):
+                    # Check that the image fits within video capture
                     if (faceTop >= imgHeight and imgLeft >= 0 and imgRight <= frameWidth ):
-                        #  create rectangle for image (from upper-left to bottom-right corner)
+                        # Create rectangle for image (from upper-left to bottom-right corner)
                         cv2.rectangle(frame, (imgLeft, imgTop), (imgRight, imgBottom), (0, 0, 255), 2)
-                        # create rectangle for query
-                        border=6
-                        cv2.rectangle(frame, (textLeft-border, textTop), (textRight+border, textBottom+2*border), (0, 0, 255), cv2.FILLED)
-                        cv2.putText(frame, query, (textLeft, textBottom+border), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1)
+                        # Create rectangle for query and print it
+                        cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
+                        cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
                     
                         if (t < 60):
                             # iterate randomly through meme dataset
