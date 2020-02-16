@@ -11,7 +11,7 @@ import sys, getopt
 
 def usage():
     print("\nusage: whatMemeAmI.py --locationFolder=\"path/to/images/folder\" --query=\"query/to/print\"")
-    print("                      [-b, --backwardCompatible] [-h, --help] [--width] [--height]")
+    print("                      [-b, --backwardCompatible] [-h, --help] [--width] [--height] [--maxPeople]")
 
     print("\nThis program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads.")
     print("The main improvement is that you can not only select the images you want to chose from and the quote, as you can play it for more than people SIMULTANEOUSLY.")
@@ -38,16 +38,17 @@ def usage():
     print("\t--query=\"query/to/print\"                     query that is displayed under randomly spinned image")
 
     print("\nOptional arguments:")
-    print("\t-b, backwardCompatible                       allows the images meant for 2,3,.. people to be selected by one person only")
+    print("\t--maxPeople=3 (default)                      tells the amount of folders with images to the people to expect")
     print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
     print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
+    print("\t-b, backwardCompatible                       allows the images meant for 2,3,.. people to be selected by one person only")
     print("\t-h, --help                                   show this help message")
   
     sys.exit(2)
 
 def arg_parse(argv):
     try:
-        opts, args = getopt.getopt(argv,"hb", ["help", "backwardCompatible", "locationFolder=", "query=", "width=", "height="])
+        opts, args = getopt.getopt(argv,"hb", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "width=", "height="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -55,6 +56,7 @@ def arg_parse(argv):
     locationFolder = None
     query = None
     backwardCompatible = False
+    maxPeople = 3
     imgWidth = 200
     imgHeight = 200
 
@@ -65,6 +67,8 @@ def arg_parse(argv):
             locationFolder = arg
         elif opt == "--query":
             query = arg
+        elif opt == "--maxPeople":
+            maxPeople = int(arg)
         elif opt in ['-b', '--backwardCompatible']:
             backwardCompatible = True
         elif opt == "--width":
@@ -73,28 +77,39 @@ def arg_parse(argv):
             imgHeight = int(arg)
     
     # debug arguments - probably we could add verbose levels...
-    print([locationFolder, query, backwardCompatible, imgWidth, imgHeight])
+    print([locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight])
 
     # check that location and query are not empty, otherwise call usage and exit
     if None in [locationFolder, query]:
         print("Specify both --locationFolder and --query")
         usage()
 
-    return locationFolder, query, backwardCompatible, imgWidth, imgHeight
+    return locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight
 
 if __name__ == "__main__":
     # call our own argument parser
-    locationFolder, query, backwardCompatible, imgWidth, imgHeight = arg_parse(sys.argv[1:])
+    locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight = arg_parse(sys.argv[1:])
 
     dirname, filename = os.path.split(os.path.abspath(__file__))
-
-    dir_path = os.path.join(dirname+locationFolder,'*g')
-
+    
     data = []
-    for fil in glob.glob(dir_path):
-        img_original = cv2.imread(fil)
-        img = cv2.resize(img_original, (imgWidth, imgHeight))
-        data.append(img)
+    dataPeopleEdges = [0]
+    dataPeopleImages = []
+
+    for i in np.arange(1, maxPeople+1):
+        dir_path = os.path.join(dirname+'/'+locationFolder+str(i)+'/','*g')
+        files_in_dir_path = glob.glob(dir_path)
+        
+        dataPeopleEdges.append(dataPeopleEdges[-1]+int(len(files_in_dir_path)))
+        dataPeopleImages.append(int(len(files_in_dir_path)/i))
+        
+        for fil in sorted(files_in_dir_path):
+            img_original = cv2.imread(fil)
+            img = cv2.resize(img_original, (imgWidth, imgHeight))
+            data.append(img)
+
+    # something like data[MAXPEOPLE1:MAXPEOPLE2] = [(1,2),(3,4),(5,6),(7,8)]
+    # but then how to access the corresponding images? by tuples?
 
     # Check that there is actually images, otherwise use a sad image perhaps?
 
