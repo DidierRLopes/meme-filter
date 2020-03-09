@@ -12,7 +12,8 @@ import sys, getopt
 
 def usage():
     print("\nusage: whatMemeAmI.py --locationFolder=\"path/to/images/folder\" --query=\"query/to/print\"")
-    print("                      [-b, --backwardCompatible] [-h, --help] [--width] [--height] [--maxPeople]")
+    print("                      [--initialTime] [--finalTime] [--width] [--height] [--maxPeople]")
+    print("                      [-b, --backwardCompatible] [-h, --help]")
 
     print("\nThis program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads.")
     print("The main improvement is that you can not only select the images you want to chose from and the quote, as you can play it for more than people SIMULTANEOUSLY.")
@@ -36,21 +37,24 @@ def usage():
     print("      The order of the images '_1, _2 and _3' matter. These are assigned from left to right.")
 
     print("\nThese arguments are a must:")
-    print("\t--locationFolder=\"path/to/images/folder\"     path to the folder that contains the images that are gonna spin randomly")
-    print("\t--query=\"query/to/print\"                     query that is displayed under randomly spinned image")
+    print("\t--locationFolder=\"path/to/images/folder\"   path to the folder that contains the images that are gonna spin randomly")
+    print("\t--query=\"query/to/print\"                   query that is displayed under randomly spinned image")
 
     print("\nOptional arguments:")
     print("\t--maxPeople=3 (default)                      tells the amount of folders with images to the people to expect")
+    print("\t--initialTime=20 (default)                   initial time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
+    print("\t--finalTIme=60 (default)                     final time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
     print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
     print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
     print("\t-b, backwardCompatible                       allows the images meant for 2,3,.. people to be selected by one person only")
+
     print("\t-h, --help                                   show this help message")
   
     sys.exit(2)
 
 def arg_parse(argv):
     try:
-        opts, args = getopt.getopt(argv,"hb", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "width=", "height="])
+        opts, args = getopt.getopt(argv,"hb", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -61,6 +65,8 @@ def arg_parse(argv):
     maxPeople = 3
     imgWidth = 200
     imgHeight = 200
+    initialTime = 20
+    finalTime = 60
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -73,24 +79,28 @@ def arg_parse(argv):
             maxPeople = int(arg)
         elif opt in ['-b', '--backwardCompatible']:
             backwardCompatible = True
+        elif opt == "--initialTime":
+            initialTime = int(arg)
+        elif opt == "--finalTime":
+            finalTime = int(arg)
         elif opt == "--width":
             imgWidth = int(arg)
         elif opt == "--height":
             imgHeight = int(arg)
     
     # debug arguments - probably we could add verbose levels...
-    print([locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight])
+    print([locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight])
 
     # check that location and query are not empty, otherwise call usage and exit
     if None in [locationFolder, query]:
         print("Specify both --locationFolder and --query")
         usage()
 
-    return locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight
+    return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight
 
 if __name__ == "__main__":
     # call our own argument parser
-    locationFolder, query, maxPeople, backwardCompatible, imgWidth, imgHeight = arg_parse(sys.argv[1:])
+    locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight = arg_parse(sys.argv[1:])
 
     dirname, filename = os.path.split(os.path.abspath(__file__))
     
@@ -109,11 +119,6 @@ if __name__ == "__main__":
             img_original = cv2.imread(fil)
             img = cv2.resize(img_original, (imgWidth, imgHeight))
             data.append(img)
-
-    #print(dataPeopleEdges)
-    #[0, 12, 16, 22]
-    #print(dataPeopleImages)
-    #[12, 2, 2]
     
     # Check that there is actually images, otherwise use a sad image perhaps?
 
@@ -160,9 +165,9 @@ if __name__ == "__main__":
         if (len(faceLocations) > 0):
             t = t+1;
 
-            if (t > 20):
+            if (t > initialTime):
 
-                if (t < 22):
+                if (t < initialTime+2):
                     if (backwardCompatible):
                         randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
                     else:
@@ -197,10 +202,10 @@ if __name__ == "__main__":
                         cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
                         cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
                     
-                        if (t<60):
+                        if (t<finalTime):
                             frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[t%len(randomArray)]+j]
                         else:
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[60%len(randomArray)]+j]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[finalTime%len(randomArray)]+j]
 
                         j = j+1
 
