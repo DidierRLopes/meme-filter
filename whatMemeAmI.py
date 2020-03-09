@@ -7,6 +7,7 @@ import os
 import glob
 import random
 import time
+import operator
 import sys, getopt
 
 def usage():
@@ -32,6 +33,7 @@ def usage():
     print("                                          l--- stu_2.jpg")
     print("                                          \\--- stu_3.jpg")
     print("Note: When there is no folder \"3\" the images used are the ones from the folders above, and so on.")
+    print("      The order of the images '_1, _2 and _3' matter. These are assigned from left to right.")
 
     print("\nThese arguments are a must:")
     print("\t--locationFolder=\"path/to/images/folder\"     path to the folder that contains the images that are gonna spin randomly")
@@ -108,9 +110,11 @@ if __name__ == "__main__":
             img = cv2.resize(img_original, (imgWidth, imgHeight))
             data.append(img)
 
-    # something like data[MAXPEOPLE1:MAXPEOPLE2] = [(1,2),(3,4),(5,6),(7,8)]
-    # but then how to access the corresponding images? by tuples?
-
+    #print(dataPeopleEdges)
+    #[0, 12, 16, 22]
+    #print(dataPeopleImages)
+    #[12, 2, 2]
+    
     # Check that there is actually images, otherwise use a sad image perhaps?
 
     # Get a reference to webcam #0 (the default one)
@@ -128,6 +132,7 @@ if __name__ == "__main__":
         sys.exit(2)
     
     faceLocations = []
+    numFaces = 0
     process_this_frame = True
 
     t = 0
@@ -135,24 +140,37 @@ if __name__ == "__main__":
         # Grab a single frame of video
         ret, frame = video_capture.read()
 
-
         # Only process every other frame of video to save time
         if process_this_frame:
             # Resize frame of video to 1/4 size for faster face recognition processing
             smallFrame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
             rgbSmallFrame = smallFrame[:, :, ::-1]
+
             # Find all the faces and face encodings in the current frame of video
             faceLocations = face_recognition.face_locations(rgbSmallFrame)
-     
+            
+            if (len(faceLocations) != numFaces):
+                t = 0
+
+        numFaces = len(faceLocations)
+
         process_this_frame = not process_this_frame
 
         if (len(faceLocations) > 0):
             t = t+1;
 
             if (t > 20):
-                # Display the results
-                for (faceTop, faceRight, faceBottom, faceLeft) in faceLocations:
+
+                if (t < 22):
+                    if (backwardCompatible):
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
+                    else:
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
+
+                j = 0
+                # Display the results -  Note the ordering by the faceLeft, for the memes to appear as requested
+                for (faceTop, faceRight, faceBottom, faceLeft) in sorted(faceLocations, key=operator.itemgetter(3)):
                     # Scale back up face locations since the frame we detected in was scaled to 1/4 size
                     faceTop *= 4
                     faceRight *= 4
@@ -179,19 +197,13 @@ if __name__ == "__main__":
                         cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
                         cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
                     
-                        if (t < 60):
-                            # iterate randomly through meme dataset
-                            randomArray = np.random.permutation(len(data))
-                            for i in randomArray:
-                                frame[imgTop:imgBottom, imgLeft:imgRight] = data[i]
-                        elif (t < 50):
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[0]]
-                        elif (t < 52):
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[1]]
-                        elif (t < 55):
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[2]]
+                        if (t<60):
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[t%len(randomArray)]+j]
                         else:
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[0]]
+                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[60%len(randomArray)]+j]
+
+                        j = j+1
+
         else:
             t = 0;
 
@@ -205,3 +217,4 @@ if __name__ == "__main__":
     # Release handle to the webcam
     video_capture.release()
     cv2.destroyAllWindows()
+
