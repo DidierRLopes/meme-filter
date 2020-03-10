@@ -89,7 +89,18 @@ def arg_parse(argv):
             imgHeight = int(arg)
     
     # debug arguments - probably we could add verbose levels...
-    print([locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight])
+    print("SETTINGS")
+    print('locationFolder=' + locationFolder)
+    print('query=' + query)
+    print('maxPeople=' + str(maxPeople))
+    if (backwardCompatible):
+        print('backwardCompatible enabled')
+    else: 
+        print('backwardCompatible disabled')
+    print('initialTime=' + str(initialTime))
+    print('finalTime=' + str(finalTime))
+    print('imgWidth=' + str(imgWidth))
+    print('imgHeight=' + str(imgHeight))
 
     # check that location and query are not empty, otherwise call usage and exit
     if None in [locationFolder, query]:
@@ -169,10 +180,10 @@ if __name__ == "__main__":
 
                 if (t < initialTime+2):
                     if (backwardCompatible):
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
-                    else:
                         randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
-
+                    else:
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
+                
                 j = 0
                 # Display the results -  Note the ordering by the faceLeft, for the memes to appear as requested
                 for (faceTop, faceRight, faceBottom, faceLeft) in sorted(faceLocations, key=operator.itemgetter(3)):
