@@ -1,36 +1,18 @@
-camera to my face on python, random meme on top of my head
-when recognizing 2 people use memes with 2 images
-when recognizing 3 people use memes with 3 images for each of them
+This program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads. The main improvement is that you can not only select the images you want to chose from and the quote, as you can play it for more than people SIMULTANEOUSLY.
 
+This repository is meant to be easily customizable. Any person is able to create their own filter by creating a folder with the images they want within a folder with 1, 2, ... based on the number of people they are meant to be used (apart from when backwardCompatible flag is enabled). And that's pretty much it.
 
+The usage can be seen below:
 
-a ideia e ter um numero X de memes
-o timer pode começar a tipo 10 segundos
-Ritmo de  0.1 segundos a 1 segundo
-a 4.5 segundos
-3.5 segundos
-2 segundos
+<img width="1111" alt="Captura de ecrã 2020-03-11, às 00 06 08" src="https://user-images.githubusercontent.com/25267873/76369663-2c3b0e00-632c-11ea-83d6-4bc3f8965281.png">
 
-10
+Note: After each run, the settings are print in order to understand what configuration is being used.
 
-a 5 segundos podemos dar slow down, do genero do q calhar no permutation ficar para outra iteracao
-para 2 segundos o mesmo, 
-e depois para 0 é o que ficar
+Some examples of runs are:
+./didiFilter.py --locationFolder=memes/ --query='Which meme am I?' --initialTime=30 --finalTime=50 -b --maxPeople=3
 
-usar ./rangomImgHeadGame dir1 dir2 dir3 
-onde dir1 é para jogar so com 1 pessoa
-CASO haja dir2 é p jogar com 2 pessoas em q os memes sao adequado ha haver
-2 pessoas
-... mesmo para o caso de 3
+./didiFilter.py --locationFolder=pokemons/ --query="Who's this pokemon?" --width=250 --height=150 --maxPeople=1
 
+./didiFilter.py --locationFolder=dragonBall/ --query='What DBZ character am I?' --maxPeople=2
 
-A ideia pode ser dar como argumento uma pasta com varias pastas dentro com nome 1, 2 e 3..
-tendo em conta o numero de pessoas q a camara reconhece, usa fotos de diferentes diretorias...
-
-Note-se que, para 1 pessoa podem-ser usadas as 3 pastas, enquanto que para 1 pessoa so pode ser usada a pasta 1.
-Para alem disso, as imagens estao agregadas, isto é, para 3 pessoas, os memes q podem calhar estão intrisicamente relacionados.
-Exemplo: 2 miudas e gato, e casal com rapaz a olhar p tras, .. estes tem q aparecer os 3 na cena aleatoria. Ou seja, so é aleatorio o
-meme final, mas as caras tem q aparecer no ecra... a pessoa q as tem pode ser aleatorio
-
-Para alem disso, o utilizador pode usar do genero ./whatMemeAmI "Que pokemon sou eu?" dir/to/pokemon/images
-de modo a ter acesso a este jogo costumizavel
+Hope you have fun with it! Would be keen to see what have you used this for
