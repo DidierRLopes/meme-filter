@@ -46,15 +46,19 @@ def usage():
     print("\t--finalTIme=60 (default)                     final time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
     print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
     print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
-    print("\t-b, backwardCompatible                       allows the images meant for 2,3,.. people to be selected by one person only")
+    print("\t-b, --backwardCompatible                     allows the images meant for 2,3,.. people to be selected by one person only")
 
+    print("\t-r                                           records a video of the filtering")
+    print("\t--rName=\"video\" (default)                selects name (and path) of the video of the filtering")
+    print("\t-p                                           takes a picture of the final filter")
+    print("\t--pName=\"picture\" (default)                selects name (and path) of the video of the filtering")
     print("\t-h, --help                                   show this help message")
   
     sys.exit(2)
 
 def arg_parse(argv):
     try:
-        opts, args = getopt.getopt(argv,"hb", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height="])
+        opts, args = getopt.getopt(argv,"hbrp", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "rName=", "rRate=", "pName="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -67,6 +71,11 @@ def arg_parse(argv):
     imgHeight = 200
     initialTime = 20
     finalTime = 60
+    record = False
+    rName = "video"
+    rRate = 1
+    picture = False
+    pName = "picture"
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -87,6 +96,16 @@ def arg_parse(argv):
             imgWidth = int(arg)
         elif opt == "--height":
             imgHeight = int(arg)
+        elif opt == "-r":
+            record = True
+        elif opt = "--rName="
+            rName = arg
+        elif opt = "--rRate="
+            rRate = int(arg)
+        elif opt == "-p":
+            picture = True
+        elif opt = "--pName="
+            pName = arg
     
     # debug arguments - probably we could add verbose levels...
     print("SETTINGS")
@@ -95,12 +114,17 @@ def arg_parse(argv):
     print('maxPeople=' + str(maxPeople))
     if (backwardCompatible):
         print('backwardCompatible enabled')
-    else: 
-        print('backwardCompatible disabled')
-    print('initialTime=' + str(initialTime))
-    print('finalTime=' + str(finalTime))
-    print('imgWidth=' + str(imgWidth))
-    print('imgHeight=' + str(imgHeight))
+    
+    print('initialTime=' + str(initialTime) + ' cycles')
+    print('finalTime=' + str(finalTime) + ' cycles')
+    print('imgWidth=' + str(imgWidth) + ' pixels')
+    print('imgHeight=' + str(imgHeight) + ' pixels')
+    
+    if (record)
+        print("recording enabled with rate " + rRate + " and file name " + rName)
+    
+    if (picture)
+        print("taking picture at the end enabled with file name " + rName)
 
     # check that location and query are not empty, otherwise call usage and exit
     if None in [locationFolder, query]:
