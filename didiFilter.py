@@ -9,6 +9,7 @@ import random
 import time
 import operator
 import sys, getopt
+from datetime import datetime
 
 def usage():
     print("\nusage: whatMemeAmI.py --locationFolder=\"path/to/images/folder\" --query=\"query/to/print\"")
@@ -48,17 +49,18 @@ def usage():
     print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
     print("\t-b, --backwardCompatible                     allows the images meant for 2,3,.. people to be selected by one person only")
 
-    print("\t-r                                           records a video of the filtering")
-    print("\t--rName=\"video\" (default)                selects name (and path) of the video of the filtering")
+    print("\t-v                                           records a video of the filtering")
+    print("\t--vName=\"vid\" (default)                    selects name of the video of the filtering")
+    print("\t--vRate=10 (default)                         selects speed of video to be recorded")
     print("\t-p                                           takes a picture of the final filter")
-    print("\t--pName=\"picture\" (default)                selects name (and path) of the video of the filtering")
+    print("\t--pName=\"pic\" (default)                    selects name of the video of the filtering")
     print("\t-h, --help                                   show this help message")
   
     sys.exit(2)
 
 def arg_parse(argv):
     try:
-        opts, args = getopt.getopt(argv,"hbrp", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "rName=", "rRate=", "pName="])
+        opts, args = getopt.getopt(argv,"hbvp", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "vName=", "vRate=", "pName="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -71,11 +73,11 @@ def arg_parse(argv):
     imgHeight = 200
     initialTime = 20
     finalTime = 60
-    record = False
-    rName = "video"
-    rRate = 1
+    video = False
+    vName = "vid"
+    vRate = 10
     picture = False
-    pName = "picture"
+    pName = "pic"
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -96,16 +98,39 @@ def arg_parse(argv):
             imgWidth = int(arg)
         elif opt == "--height":
             imgHeight = int(arg)
-        elif opt == "-r":
-            record = True
-        elif opt = "--rName="
-            rName = arg
-        elif opt = "--rRate="
-            rRate = int(arg)
-        elif opt == "-p":
+        elif opt == '-v':
+            video = True
+        elif opt == "--vName":
+            vName = arg
+        elif opt == "--vRate":
+            vRate = int(arg)
+        elif opt == '-p':
             picture = True
-        elif opt = "--pName="
+        elif opt == "--pName":
             pName = arg
+
+    if (video or picture):
+        dirName, fileName = os.path.split(os.path.abspath(__file__))
+        now = datetime.now()
+        datetimeString = now.strftime("%d%m%Y_%H%M%S")
+
+        # If video is selected search if vName is allowed. If not, add "_DDMMYY_HHMMSS" to it
+        if (video):
+            videoDirPath = os.path.join(dirName+'/outputs/videos/','*')
+            for videos in glob.glob(videoDirPath):
+                videoDirName, videoFileName = os.path.split(os.path.abspath(videos))
+        
+                if ((vName + '.avi') == videoFileName):
+                    vName = vName + '_' + datetimeString
+
+        # If picture is selected search if vName is allowed. If not, add "_DDMMYY_HHMMSS" to it
+        if (picture):
+            pictureDirPath = os.path.join(dirName+'/outputs/pictures/','*')
+            for pictures in glob.glob(pictureDirPath):
+                pictureDirName, pictureFileName = os.path.split(os.path.abspath(pictures))
+
+                if ((pName + '.png') == pictureFileName):
+                    pName = pName + '_' + datetimeString
     
     # debug arguments - probably we could add verbose levels...
     print("SETTINGS")
@@ -120,39 +145,40 @@ def arg_parse(argv):
     print('imgWidth=' + str(imgWidth) + ' pixels')
     print('imgHeight=' + str(imgHeight) + ' pixels')
     
-    if (record)
-        print("recording enabled with rate " + rRate + " and file name " + rName)
+    if (video):
+        print("recording enabled with rate " + str(vRate) + " and file name " + vName)
     
-    if (picture)
-        print("taking picture at the end enabled with file name " + rName)
+    if (picture):
+        print("taking picture at the end enabled with file name " + pName)
 
     # check that location and query are not empty, otherwise call usage and exit
     if None in [locationFolder, query]:
         print("Specify both --locationFolder and --query")
         usage()
 
-    return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight
+    return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName
+
 
 if __name__ == "__main__":
     # call our own argument parser
-    locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight = arg_parse(sys.argv[1:])
+    locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName = arg_parse(sys.argv[1:])
 
-    dirname, filename = os.path.split(os.path.abspath(__file__))
-    
+    dirName, fileName = os.path.split(os.path.abspath(__file__))
+
     data = []
     dataPeopleEdges = [0]
     dataPeopleImages = []
 
     for i in np.arange(1, maxPeople+1):
-        dir_path = os.path.join(dirname+'/'+locationFolder+str(i)+'/','*g')
-        files_in_dir_path = glob.glob(dir_path)
+        dirPath = os.path.join(dirName+'/'+locationFolder+str(i)+'/','*g')
+        filesInDirPath = glob.glob(dirPath)
         
-        dataPeopleEdges.append(dataPeopleEdges[-1]+int(len(files_in_dir_path)))
-        dataPeopleImages.append(int(len(files_in_dir_path)/i))
+        dataPeopleEdges.append(dataPeopleEdges[-1]+int(len(filesInDirPath)))
+        dataPeopleImages.append(int(len(filesInDirPath)/i))
         
-        for fil in sorted(files_in_dir_path):
-            img_original = cv2.imread(fil)
-            img = cv2.resize(img_original, (imgWidth, imgHeight))
+        for fil in sorted(filesInDirPath):
+            imgOriginal = cv2.imread(fil)
+            img = cv2.resize(imgOriginal, (imgWidth, imgHeight))
             data.append(img)
     
     # Check that there is actually images, otherwise use a sad image perhaps?
@@ -161,7 +187,7 @@ if __name__ == "__main__":
     video_capture = cv2.VideoCapture(0)
     frameWidth = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH )
     frameHeight = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
-   
+
     # Get text size from query
     queryThickness = 0.7
     queryBorder = 6
@@ -170,7 +196,11 @@ if __name__ == "__main__":
     if (imgWidth > (frameWidth/2) or textWidth > (frameWidth/2) or imgHeight > (frameHeight/2)):
         print("Either reduce the size of the image, or select a shorter query")
         sys.exit(2)
-    
+
+    if (video):
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        vidOut = cv2.VideoWriter(dirName + '/outputs/videos/' + vName + '.avi', fourcc, vRate, (int(frameWidth),int(frameHeight)))
+
     faceLocations = []
     numFaces = 0
     process_this_frame = True
@@ -197,14 +227,17 @@ if __name__ == "__main__":
 
         process_this_frame = not process_this_frame
 
-        if (len(faceLocations) > 0):
+        if (numFaces > 0):
             t = t+1;
 
             if (t > initialTime):
 
                 if (t < initialTime+2):
                     if (backwardCompatible):
+                        print("back numFaces: " + str(numFaces))
+                        
                         randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
+                        print("back len " + str(len(randomArray)))
                     else:
                         randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
                 
@@ -237,13 +270,22 @@ if __name__ == "__main__":
                         cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
                         cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
                     
+                        print("len random array: " + str(len(randomArray)))
+                        print("t: " + str(t))
+                        print("j: " + str(j))
+                        print("len data: " + str(len(data)))
+
                         if (t<finalTime):
                             frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[t%len(randomArray)]+j]
                         else:
                             frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[finalTime%len(randomArray)]+j]
+                        
+                        if (picture):
+                            cv2.imwrite(dirName + '/outputs/pictures/' + pName + '.png', frame)
 
                         j = j+1
-
+            if (video):
+                vidOut.write(frame)
         else:
             t = 0;
 

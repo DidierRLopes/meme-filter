@@ -16,3 +16,10 @@ Some examples of runs are:
 ./didiFilter.py --locationFolder=dragonBall/ --query='What DBZ character am I?' --maxPeople=2
 
 Hope you have fun with it! Would be keen to see what have you used this for
+
+
+Things to do:
+ - fix error with -b flag
+ - record a video
+ - take a picture 
+ - probably add both these to a folder? like results/pictures and results/videos ?
