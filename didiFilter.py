@@ -11,6 +11,7 @@ import operator
 import sys, getopt
 from datetime import datetime
 
+
 def usage():
     print("\nusage: whatMemeAmI.py --locationFolder=\"path/to/images/folder\" --query=\"query/to/print\"")
     print("                      [--initialTime] [--finalTime] [--width] [--height] [--maxPeople]")
@@ -42,7 +43,7 @@ def usage():
     print("\t--query=\"query/to/print\"                   query that is displayed under randomly spinned image")
 
     print("\nOptional arguments:")
-    print("\t--maxPeople=3 (default)                      tells the amount of folders with images to the people to expect")
+    print("\t--maxPeople=1 (default)                      tells the amount of folders with images to the people to expect")
     print("\t--initialTime=20 (default)                   initial time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
     print("\t--finalTIme=60 (default)                     final time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
     print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
@@ -58,6 +59,7 @@ def usage():
   
     sys.exit(2)
 
+
 def arg_parse(argv):
     try:
         opts, args = getopt.getopt(argv,"hbvp", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "vName=", "vRate=", "pName="])
@@ -65,10 +67,10 @@ def arg_parse(argv):
         print(str(err))
         usage()
     
-    locationFolder = None
-    query = None
+    locationFolder = 'memes'
+    query = 'WHAT MEME AM I?'
     backwardCompatible = False
-    maxPeople = 3
+    maxPeople = 1
     imgWidth = 200
     imgHeight = 200
     initialTime = 20
@@ -108,9 +110,27 @@ def arg_parse(argv):
             picture = True
         elif opt == "--pName":
             pName = arg
+    
+    ## QUICK CHECK THAT ARGS SELECTED MEET SPECIFICATIONS
+    
+    dirName, fileName = os.path.split(os.path.abspath(__file__))
+   
+        
+    locExists = False    
+    for locFolder in glob.glob(os.path.join(dirName + '/','*')):
+        locFolderDir, locFolderName = os.path.split(os.path.abspath(locFolder))
+        if (locFolderName == locationFolder):
+            locExists = True
+    
+    if (not locExists):
+        print("The locationFolder selected is not valid!")
+        sys.exit(2)
+
+    if (maxPeople > len(glob.glob(os.path.join(dirName + '/' + locationFolder + '/','*')))):
+        print("The maxPeople selected is not valid!")
+        sys.exit(2)
 
     if (video or picture):
-        dirName, fileName = os.path.split(os.path.abspath(__file__))
         now = datetime.now()
         datetimeString = now.strftime("%d%m%Y_%H%M%S")
 
@@ -132,7 +152,7 @@ def arg_parse(argv):
                 if ((pName + '.png') == pictureFileName):
                     pName = pName + '_' + datetimeString
     
-    # debug arguments - probably we could add verbose levels...
+    ## DEBUG ON ARGUMENTS CHOSEN
     print("SETTINGS")
     print('locationFolder=' + locationFolder)
     print('query=' + query)
@@ -151,11 +171,6 @@ def arg_parse(argv):
     if (picture):
         print("taking picture at the end enabled with file name " + pName)
 
-    # check that location and query are not empty, otherwise call usage and exit
-    if None in [locationFolder, query]:
-        print("Specify both --locationFolder and --query")
-        usage()
-
     return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName
 
 
@@ -170,7 +185,7 @@ if __name__ == "__main__":
     dataPeopleImages = []
 
     for i in np.arange(1, maxPeople+1):
-        dirPath = os.path.join(dirName+'/'+locationFolder+str(i)+'/','*g')
+        dirPath = os.path.join(dirName+'/'+locationFolder+'/'+str(i)+'/','*g')
         filesInDirPath = glob.glob(dirPath)
         
         dataPeopleEdges.append(dataPeopleEdges[-1]+int(len(filesInDirPath)))
@@ -180,8 +195,6 @@ if __name__ == "__main__":
             imgOriginal = cv2.imread(fil)
             img = cv2.resize(imgOriginal, (imgWidth, imgHeight))
             data.append(img)
-    
-    # Check that there is actually images, otherwise use a sad image perhaps?
 
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
@@ -225,6 +238,10 @@ if __name__ == "__main__":
 
         numFaces = len(faceLocations)
 
+        if (numFaces > maxPeople):
+           print("There appears to be more people than allowed")
+           sys.exit(2)
+        
         process_this_frame = not process_this_frame
 
         if (numFaces > 0):
@@ -234,12 +251,9 @@ if __name__ == "__main__":
 
                 if (t < initialTime+2):
                     if (backwardCompatible):
-                        print("back numFaces: " + str(numFaces))
-                        
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
-                        print("back len " + str(len(randomArray)))
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1]-numFaces, numFaces))
                     else:
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces]-numFaces, numFaces))
                 
                 j = 0
                 # Display the results -  Note the ordering by the faceLeft, for the memes to appear as requested
@@ -269,12 +283,7 @@ if __name__ == "__main__":
                         # Create rectangle for query and print it
                         cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
                         cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
-                    
-                        print("len random array: " + str(len(randomArray)))
-                        print("t: " + str(t))
-                        print("j: " + str(j))
-                        print("len data: " + str(len(data)))
-
+                  
                         if (t<finalTime):
                             frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[t%len(randomArray)]+j]
                         else:
