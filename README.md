@@ -1,4 +1,4 @@
-This program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads. The main improvement is that you can not only select the images you want to chose from and the quote, as you can play it for more than people SIMULTANEOUSLY.
+This program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads. The main improvement is that you can not only select the images you want to chose from and the quote, but you can also play it with friends (recognizing more than 1 face in the same frame).
 
 This repository is meant to be easily customizable. Any person is able to create their own filter by creating a folder with the images they want within a folder with 1, 2, ... based on the number of people they are meant to be used (apart from when backwardCompatible flag is enabled). And that's pretty much it.
 
@@ -17,9 +17,3 @@ Some examples of runs are:
 
 Hope you have fun with it! Would be keen to see what have you used this for
 
-
-Things to do:
- - fix error with -b flag
- - record a video
- - take a picture 
- - probably add both these to a folder? like results/pictures and results/videos ?

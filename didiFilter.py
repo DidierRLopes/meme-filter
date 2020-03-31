@@ -49,12 +49,13 @@ def usage():
     print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
     print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
     print("\t-b, --backwardCompatible                     allows the images meant for 2,3,.. people to be selected by one person only")
-
+    print("\t-s, --settings                               prints settings used in the game in the console")
+    
     print("\t-v                                           records a video of the filtering")
-    print("\t--vName=\"vid\" (default)                    selects name of the video of the filtering")
+    print("\t--vName=\"vid\" (default)                      selects name of the video of the filtering")
     print("\t--vRate=10 (default)                         selects speed of video to be recorded")
     print("\t-p                                           takes a picture of the final filter")
-    print("\t--pName=\"pic\" (default)                    selects name of the video of the filtering")
+    print("\t--pName=\"pic\" (default)                      selects name of the video of the filtering")
     print("\t-h, --help                                   show this help message")
   
     sys.exit(2)
@@ -62,7 +63,7 @@ def usage():
 
 def arg_parse(argv):
     try:
-        opts, args = getopt.getopt(argv,"hbvp", ["help", "backwardCompatible", "locationFolder=", "query=", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "vName=", "vRate=", "pName="])
+        opts, args = getopt.getopt(argv,"hbvps", ["help", "backwardCompatible", "locationFolder=", "query=", "settings", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "vName=", "vRate=", "pName="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
@@ -80,6 +81,7 @@ def arg_parse(argv):
     vRate = 10
     picture = False
     pName = "pic"
+    debugSettings = False
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -88,6 +90,8 @@ def arg_parse(argv):
             locationFolder = arg
         elif opt == "--query":
             query = arg
+        elif opt in ['-s', '--settings']:
+            debugSettings = True
         elif opt == "--maxPeople":
             maxPeople = int(arg)
         elif opt in ['-b', '--backwardCompatible']:
@@ -152,24 +156,21 @@ def arg_parse(argv):
                 if ((pName + '.png') == pictureFileName):
                     pName = pName + '_' + datetimeString
     
-    ## DEBUG ON ARGUMENTS CHOSEN
-    print("SETTINGS")
-    print('locationFolder=' + locationFolder)
-    print('query=' + query)
-    print('maxPeople=' + str(maxPeople))
-    if (backwardCompatible):
-        print('backwardCompatible enabled')
-    
-    print('initialTime=' + str(initialTime) + ' cycles')
-    print('finalTime=' + str(finalTime) + ' cycles')
-    print('imgWidth=' + str(imgWidth) + ' pixels')
-    print('imgHeight=' + str(imgHeight) + ' pixels')
-    
-    if (video):
-        print("recording enabled with rate " + str(vRate) + " and file name " + vName)
-    
-    if (picture):
-        print("taking picture at the end enabled with file name " + pName)
+    if (debugSettings):
+        print("The settings used in these game are:")
+        print(': locationFolder=' + locationFolder)
+        print(': query=' + query)
+        print(': maxPeople=' + str(maxPeople))
+        if (backwardCompatible):
+            print(': backwardCompatible enabled')
+        print(': initialTime=' + str(initialTime) + ' cycles')
+        print(': finalTime=' + str(finalTime) + ' cycles')
+        print(': imgWidth=' + str(imgWidth) + ' pixels')
+        print(': imgHeight=' + str(imgHeight) + ' pixels')
+        if (video):
+            print(": recording enabled with rate " + str(vRate) + " and file name " + vName)
+        if (picture):
+            print(": taking picture at the end enabled with file name " + pName)
 
     return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName
 
@@ -251,9 +252,9 @@ if __name__ == "__main__":
 
                 if (t < initialTime+2):
                     if (backwardCompatible):
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1]-numFaces, numFaces))
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
                     else:
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces]-numFaces, numFaces))
+                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
                 
                 j = 0
                 # Display the results -  Note the ordering by the faceLeft, for the memes to appear as requested
