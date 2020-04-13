@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
 
-import numpy as np
-import cv2
-import face_recognition
+""" This program is meant to be an advanced version of the known snapchat filter 
+    where there are random images spinning on top of people's heads.
+    The main improvement is that you can not only select the images you want to chose from and the caption, 
+    as you can play it for more than people SIMULTANEOUSLY.    
+"""
+
+from datetime import datetime
 import os
 import glob
-import random
-import time
 import operator
-import sys, getopt
-from datetime import datetime
+import sys
+import getopt
+import cv2
+import face_recognition
+import numpy as np
 
 
 def usage():
-    print("\nusage: whatMemeAmI.py --locationFolder=\"path/to/images/folder\" --query=\"query/to/print\"")
-    print("                      [--initialTime] [--finalTime] [--width] [--height] [--maxPeople]")
-    print("                      [-b, --backwardCompatible] [-h, --help]")
+    '''Print usage in the console'''
+    print("\nusage: didifilter.py --location=\"path/to/images/folder\" --caption=\"caption/to/print\"")
+    print("                      [--initial=__] [--final=__] [--width=__] [--height=__] [--max=__]")
+    print("                      [-v] [--video=__] [--rate=__] [-p] [--picture=__]")
+    print("                      [-b, --backward] [-d, --debug] [-h, --help]")
 
     print("\nThis program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads.")
     print("The main improvement is that you can not only select the images you want to chose from and the quote, as you can play it for more than people SIMULTANEOUSLY.")
-    print("For that, when giving the locationFolder, this must have the following organization:\n")
+    print("For that, when giving the location, this must have the following organization:\n")
     print("                                          /--- abc.jpg")
     print("path/to/images/folder ------- folder: \"1\" ---- def.jpg")
     print("                         |                \\--- ghi.jpg")
@@ -39,184 +46,186 @@ def usage():
     print("      The order of the images '_1, _2 and _3' matter. These are assigned from left to right.")
 
     print("\nThese arguments are a must:")
-    print("\t--locationFolder=\"path/to/images/folder\"   path to the folder that contains the images that are gonna spin randomly")
-    print("\t--query=\"query/to/print\"                   query that is displayed under randomly spinned image")
+    print("\t--location=\"path/to/images/folder\"     path to the folder that contains the images that are gonna spin randomly")
+    print("\t--caption=\"caption/to/print\"           caption that is displayed under randomly spinned image")
 
     print("\nOptional arguments:")
-    print("\t--maxPeople=1 (default)                      tells the amount of folders with images to the people to expect")
-    print("\t--initialTime=20 (default)                   initial time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
-    print("\t--finalTIme=60 (default)                     final time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
-    print("\t--width=200 (default)                        change width of the images (in pixels) to be resized")
-    print("\t--height=200 (default)                       change height of the images (in pixels) to be resized")
-    print("\t-b, --backwardCompatible                     allows the images meant for 2,3,.. people to be selected by one person only")
-    print("\t-s, --settings                               prints settings used in the game in the console")
-    
-    print("\t-v                                           records a video of the filtering")
-    print("\t--vName=\"vid\" (default)                      selects name of the video of the filtering")
-    print("\t--vRate=10 (default)                         selects speed of video to be recorded")
-    print("\t-p                                           takes a picture of the final filter")
-    print("\t--pName=\"pic\" (default)                      selects name of the video of the filtering")
-    print("\t-h, --help                                   show this help message")
-  
+    print("\t--max=1 (default)                tells the amount of folders with images to the people to expect")
+    print("\t--initial=20 (default)           initial time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
+    print("\t--final=60 (default)             final time to recognize faces (the time is not seconds but cycles, depends on computer specs)")
+    print("\t--width=200 (default)            change width of the images (in pixels) to be resized")
+    print("\t--height=200 (default)           change height of the images (in pixels) to be resized")
+
+    print("\t-v                               records a video of the filtering")
+    print("\t--video=\"vid\" (default)          selects name of the video of the filtering")
+    print("\t--rate=10 (default)              selects speed of video to be recorded")
+    print("\t-p                               takes a picture of the final filter")
+    print("\t--picturee=\"pic\" (default)       selects name of the video of the filtering")
+
+    print("\t-b, --backward                   allows the images meant for 2,3,.. people to be selected by one person only")
+    print("\t-d, --debug                      prints settings used in the game in the console")
+    print("\t-h, --help                       show this help message")
+
     sys.exit(2)
 
 
 def arg_parse(argv):
+    '''Parse arguments provided by the user'''
     try:
-        opts, args = getopt.getopt(argv,"hbvps", ["help", "backwardCompatible", "locationFolder=", "query=", "settings", "maxPeople=", "initialTime=", "finalTime=", "width=", "height=", "vName=", "vRate=", "pName="])
+        opts, args = getopt.getopt(argv, "hbvpd", ["help", "backward", "location=", "caption=", "debug", "max=", "initial=", "final=", "width=", "height=", "video=", "rate=", "picture="])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
-    
-    locationFolder = 'memes'
-    query = 'WHAT MEME AM I?'
-    backwardCompatible = False
-    maxPeople = 1
-    imgWidth = 200
-    imgHeight = 200
-    initialTime = 20
-    finalTime = 60
-    video = False
-    vName = "vid"
-    vRate = 10
-    picture = False
-    pName = "pic"
-    debugSettings = False
+
+    s_location = 'memes'
+    s_caption = 'WHAT MEME AM I?'
+    b_backward = False
+    n_max_people = 1
+    n_img_width = 200
+    n_img_height = 200
+    n_initial_time = 20
+    n_final_time = 60
+    b_video = False
+    s_vid_name = "vid"
+    n_rate = 7
+    b_picture = False
+    s_pic_name = "pic"
+    b_debug = False
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
-            usage();
-        elif opt == "--locationFolder":
-            locationFolder = arg
-        elif opt == "--query":
-            query = arg
-        elif opt in ['-s', '--settings']:
-            debugSettings = True
-        elif opt == "--maxPeople":
-            maxPeople = int(arg)
-        elif opt in ['-b', '--backwardCompatible']:
-            backwardCompatible = True
-        elif opt == "--initialTime":
-            initialTime = int(arg)
-        elif opt == "--finalTime":
-            finalTime = int(arg)
+            usage()
+        elif opt == "--location":
+            s_location = arg
+        elif opt == "--caption":
+            s_caption = arg
+        elif opt in ['-d', '--debug']:
+            b_debug = True
+        elif opt == "--max":
+            n_max_people = int(arg)
+        elif opt in ['-b', '--backward']:
+            b_backward = True
+        elif opt == "--initial":
+            n_initial_time = int(arg)
+        elif opt == "--final":
+            n_final_time = int(arg)
         elif opt == "--width":
-            imgWidth = int(arg)
+            n_img_width = int(arg)
         elif opt == "--height":
-            imgHeight = int(arg)
+            n_img_height = int(arg)
         elif opt == '-v':
-            video = True
-        elif opt == "--vName":
-            vName = arg
-        elif opt == "--vRate":
-            vRate = int(arg)
+            b_video = True
+        elif opt == "--video":
+            s_vid_name = arg
+        elif opt == "--rate":
+            n_rate = int(arg)
         elif opt == '-p':
-            picture = True
-        elif opt == "--pName":
-            pName = arg
-    
-    ## QUICK CHECK THAT ARGS SELECTED MEET SPECIFICATIONS
-    
-    dirName, fileName = os.path.split(os.path.abspath(__file__))
-   
-        
-    locExists = False    
-    for locFolder in glob.glob(os.path.join(dirName + '/','*')):
-        locFolderDir, locFolderName = os.path.split(os.path.abspath(locFolder))
-        if (locFolderName == locationFolder):
-            locExists = True
-    
-    if (not locExists):
-        print("The locationFolder selected is not valid!")
+            b_picture = True
+        elif opt == "--picture":
+            s_pic_name = arg
+
+
+    s_dir_name, s_file_name = os.path.split(os.path.abspath(__file__))
+
+    b_loc_exists = False
+    for s_loc_folder in glob.glob(os.path.join(s_dir_name + '/', '*')):
+        s_loc_folder_dir, s_loc_folder_name = os.path.split(os.path.abspath(s_loc_folder))
+        if s_loc_folder_name == s_location:
+            b_loc_exists = True
+
+    if not b_loc_exists:
+        print("The location selected is not valid!")
         sys.exit(2)
 
-    if (maxPeople > len(glob.glob(os.path.join(dirName + '/' + locationFolder + '/','*')))):
-        print("The maxPeople selected is not valid!")
+    if n_max_people > len(glob.glob(os.path.join(s_dir_name + '/' + s_location + '/', '*'))):
+        print("The max people selected is not valid!")
         sys.exit(2)
 
-    if (video or picture):
+    if b_video or b_picture:
         now = datetime.now()
-        datetimeString = now.strftime("%d%m%Y_%H%M%S")
+        s_datetime = now.strftime("%d%m%Y_%H%M%S")
 
-        # If video is selected search if vName is allowed. If not, add "_DDMMYY_HHMMSS" to it
-        if (video):
-            videoDirPath = os.path.join(dirName+'/outputs/videos/','*')
-            for videos in glob.glob(videoDirPath):
-                videoDirName, videoFileName = os.path.split(os.path.abspath(videos))
-        
-                if ((vName + '.avi') == videoFileName):
-                    vName = vName + '_' + datetimeString
+        # If video is selected search if s_vid_name is allowed. If not, add "_DDMMYY_HHMMSS" to it
+        if b_video:
+            s_video_dir_path = os.path.join(s_dir_name+'/outputs/videos/', '*')
+            for videos in glob.glob(s_video_dir_path):
+                s_video_dir, s_video_name = os.path.split(os.path.abspath(videos))
 
-        # If picture is selected search if vName is allowed. If not, add "_DDMMYY_HHMMSS" to it
-        if (picture):
-            pictureDirPath = os.path.join(dirName+'/outputs/pictures/','*')
-            for pictures in glob.glob(pictureDirPath):
-                pictureDirName, pictureFileName = os.path.split(os.path.abspath(pictures))
+                if (s_vid_name + '.avi') == s_video_name:
+                    s_vid_name = s_vid_name + '_' + s_datetime
 
-                if ((pName + '.png') == pictureFileName):
-                    pName = pName + '_' + datetimeString
-    
-    if (debugSettings):
+        # If picture is selected search if s_vid_name is allowed. If not, add "_DDMMYY_HHMMSS" to it
+        if b_picture:
+            s_picture_dir_path = os.path.join(s_dir_name+'/outputs/pictures/', '*')
+            for pictures in glob.glob(s_picture_dir_path):
+                s_picture_dir, s_picture_name = os.path.split(os.path.abspath(pictures))
+
+                if (s_pic_name + '.png') == s_picture_name:
+                    s_pic_name = s_pic_name + '_' + s_datetime
+
+    if b_debug:
         print("The settings used in these game are:")
-        print(': locationFolder=' + locationFolder)
-        print(': query=' + query)
-        print(': maxPeople=' + str(maxPeople))
-        if (backwardCompatible):
-            print(': backwardCompatible enabled')
-        print(': initialTime=' + str(initialTime) + ' cycles')
-        print(': finalTime=' + str(finalTime) + ' cycles')
-        print(': imgWidth=' + str(imgWidth) + ' pixels')
-        print(': imgHeight=' + str(imgHeight) + ' pixels')
-        if (video):
-            print(": recording enabled with rate " + str(vRate) + " and file name " + vName)
-        if (picture):
-            print(": taking picture at the end enabled with file name " + pName)
+        print(": location=" + s_location)
+        print(": caption=" + s_caption)
+        print(": maxPeople=" + str(n_max_people))
+        print(": backward compatibility is " + ("disabled", "enabled")[b_backward])
+        print(": initial=" + str(n_initial_time) + " cycles")
+        print(": final=" + str(n_final_time) + " cycles")
+        print(": width=" + str(n_img_width) + " pixels")
+        print(": height=" + str(n_img_height) + " pixels")
+        if b_video:
+            print(": video recording enabled with rate " + str(n_rate) + " and file name " + s_vid_name)
+        else:
+            print(": video recording disabled")
+        if b_picture:
+            print(": taking picture at the end enabled with file name " + s_pic_name)
+        else:
+            print(": taking picture at the end disabled")
 
-    return locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName
+    return s_location, s_caption, n_max_people, b_backward, n_initial_time, n_final_time, n_img_width, n_img_height, b_video, s_vid_name, n_rate, b_picture, s_pic_name
 
 
 if __name__ == "__main__":
+    '''Algorithm'''
     # call our own argument parser
-    locationFolder, query, maxPeople, backwardCompatible, initialTime, finalTime, imgWidth, imgHeight, video, vName, vRate, picture, pName = arg_parse(sys.argv[1:])
+    s_location, s_caption, n_max_people, b_backward, n_initial_time, n_final_time, n_img_width, n_img_height, b_video, s_vid_name, n_rate, b_picture, s_pic_name = arg_parse(sys.argv[1:])
 
-    dirName, fileName = os.path.split(os.path.abspath(__file__))
+    s_dir_name, s_file_name = os.path.split(os.path.abspath(__file__))
 
     data = []
-    dataPeopleEdges = [0]
-    dataPeopleImages = []
+    a_data_people_edges = [0]
 
-    for i in np.arange(1, maxPeople+1):
-        dirPath = os.path.join(dirName+'/'+locationFolder+'/'+str(i)+'/','*g')
-        filesInDirPath = glob.glob(dirPath)
-        
-        dataPeopleEdges.append(dataPeopleEdges[-1]+int(len(filesInDirPath)))
-        dataPeopleImages.append(int(len(filesInDirPath)/i))
-        
-        for fil in sorted(filesInDirPath):
-            imgOriginal = cv2.imread(fil)
-            img = cv2.resize(imgOriginal, (imgWidth, imgHeight))
+    for i in np.arange(1, n_max_people+1):
+        dirPath = os.path.join(s_dir_name+'/'+s_location+'/'+str(i)+'/', '*g')
+        s_files_in_dir_path = glob.glob(dirPath)
+
+        a_data_people_edges.append(a_data_people_edges[-1]+int(len(s_files_in_dir_path)))
+
+        for fil in sorted(s_files_in_dir_path):
+            img_original = cv2.imread(fil)
+            img = cv2.resize(img_original, (n_img_width, n_img_height))
             data.append(img)
 
     # Get a reference to webcam #0 (the default one)
     video_capture = cv2.VideoCapture(0)
-    frameWidth = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH )
-    frameHeight = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
+    n_frame_width = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
+    n_frame_height = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    # Get text size from query
-    queryThickness = 0.7
-    queryBorder = 6
-    textWidth, textHeight = cv2.getTextSize(query, cv2.FONT_HERSHEY_DUPLEX, queryThickness, 1)[0]
-    
-    if (imgWidth > (frameWidth/2) or textWidth > (frameWidth/2) or imgHeight > (frameHeight/2)):
-        print("Either reduce the size of the image, or select a shorter query")
+    # Get text size from caption
+    n_caption_thickness = 0.7
+    n_caption_border = 6
+    n_text_width, n_text_height = cv2.getTextSize(s_caption, cv2.FONT_HERSHEY_DUPLEX, n_caption_thickness, 1)[0]
+
+    if (n_img_width > (n_frame_width/2)) or (n_text_width > (n_frame_width/2)) or (n_img_height > (n_frame_height/2)):
+        print("Either reduce the size of the image, or select a shorter caption")
         sys.exit(2)
 
-    if (video):
+    if b_video:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        vidOut = cv2.VideoWriter(dirName + '/outputs/videos/' + vName + '.avi', fourcc, vRate, (int(frameWidth),int(frameHeight)))
+        vid_out = cv2.VideoWriter(s_dir_name + '/outputs/videos/' + s_vid_name + '.avi', fourcc, n_rate, (int(n_frame_width), int(n_frame_height)))
 
-    faceLocations = []
-    numFaces = 0
+    face_locations = []
+    num_faces = 0
     process_this_frame = True
 
     t = 0
@@ -227,77 +236,81 @@ if __name__ == "__main__":
         # Only process every other frame of video to save time
         if process_this_frame:
             # Resize frame of video to 1/4 size for faster face recognition processing
-            smallFrame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-            rgbSmallFrame = smallFrame[:, :, ::-1]
+            rgb_small_frame = small_frame[:, :, ::-1]
 
             # Find all the faces and face encodings in the current frame of video
-            faceLocations = face_recognition.face_locations(rgbSmallFrame)
-            
-            if (len(faceLocations) != numFaces):
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+
+            if len(face_locations) != num_faces:
                 t = 0
 
-        numFaces = len(faceLocations)
+        num_faces = len(face_locations)
 
-        if (numFaces > maxPeople):
-           print("There appears to be more people than allowed")
-           sys.exit(2)
-        
+        if num_faces > n_max_people:
+            print("There appears to be more people than allowed")
+            sys.exit(2)
+
         process_this_frame = not process_this_frame
 
-        if (numFaces > 0):
-            t = t+1;
+        if num_faces > 0:
+            t = t+1
 
-            if (t > initialTime):
+            if t > n_initial_time:
 
-                if (t < initialTime+2):
-                    if (backwardCompatible):
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[-1], numFaces))
+                if t < n_initial_time+2:
+                    a_random = np.random.permutation(np.arange(a_data_people_edges[num_faces-1], a_data_people_edges[(num_faces, -1)[b_backward]], num_faces))
+                    '''
+                    if b_backward:
+                        a_random = np.random.permutation(np.arange(a_data_people_edges[num_faces-1], a_data_people_edges[-1], num_faces))
                     else:
-                        randomArray = np.random.permutation(np.arange(dataPeopleEdges[numFaces-1], dataPeopleEdges[numFaces], numFaces))
-                
-                j = 0
-                # Display the results -  Note the ordering by the faceLeft, for the memes to appear as requested
-                for (faceTop, faceRight, faceBottom, faceLeft) in sorted(faceLocations, key=operator.itemgetter(3)):
-                    # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-                    faceTop *= 4
-                    faceRight *= 4
-                    faceBottom *= 4
-                    faceLeft *= 4
-                   
-                    # Extract image location based on recognized face
-                    imgLeft = int((faceLeft+faceRight-imgWidth)/2)
-                    imgRight = int((faceLeft+faceRight+imgWidth)/2)
-                    imgTop = faceTop-imgHeight
-                    imgBottom = faceTop
+                        a_random = np.random.permutation(np.arange(a_data_people_edges[num_faces-1], a_data_people_edges[num_faces], num_faces))
+                    '''
 
-                    # Extract query location based on recognized face
-                    textLeft = int((faceLeft+faceRight-textWidth)/2)
-                    textRight = int((faceLeft+faceRight+textWidth)/2)
-                    textTop = faceTop
-                    textBottom = faceTop+textHeight
+                j = 0
+                # Display the results -  Note the ordering by the face_left, for the memes to appear as requested
+                for (face_top, face_right, face_bottom, face_left) in sorted(face_locations, key=operator.itemgetter(3)):
+                    # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+                    face_top *= 4
+                    face_right *= 4
+                    face_bottom *= 4
+                    face_left *= 4
+
+                    # Extract image location based on recognized face
+                    img_left = int((face_left+face_right-n_img_width)/2)
+                    img_right = int((face_left+face_right+n_img_width)/2)
+                    img_top = face_top-n_img_height
+                    img_bottom = face_top
+
+                    # Extract caption location based on recognized face
+                    text_left = int((face_left+face_right-n_text_width)/2)
+                    text_right = int((face_left+face_right+n_text_width)/2)
+                    text_top = face_top
+                    text_bottom = face_top+n_text_height
 
                     # Check that the image fits within video capture
-                    if (faceTop >= imgHeight and imgLeft >= 0 and imgRight <= frameWidth ):
+                    if (face_top >= n_img_height) and (img_left >= 0) and (img_right <= n_frame_width):
                         # Create rectangle for image (from upper-left to bottom-right corner)
-                        cv2.rectangle(frame, (imgLeft, imgTop), (imgRight, imgBottom), (0, 0, 255), 2)
-                        # Create rectangle for query and print it
-                        cv2.rectangle(frame, (textLeft-queryBorder, textTop), (textRight+queryBorder, textBottom+2*queryBorder), (0, 0, 255), cv2.FILLED)
-                        cv2.putText(frame, query, (textLeft, textBottom+queryBorder), cv2.FONT_HERSHEY_DUPLEX, queryThickness, (255, 255, 255), 1)
-                  
-                        if (t<finalTime):
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[t%len(randomArray)]+j]
+                        cv2.rectangle(frame, (img_left, img_top), (img_right, img_bottom), (0, 0, 255), 2)
+                        # Create rectangle for caption and print it
+                        cv2.rectangle(frame, (text_left-n_caption_border, text_top), (text_right+n_caption_border, text_bottom+2*n_caption_border), (0, 0, 255), cv2.FILLED)
+                        cv2.putText(frame, s_caption, (text_left, text_bottom+n_caption_border), cv2.FONT_HERSHEY_DUPLEX, n_caption_thickness, (255, 255, 255), 1)
+
+                        if t < n_final_time:
+                            frame[img_top:img_bottom, img_left:img_right] = data[a_random[t%len(a_random)]+j]
                         else:
-                            frame[imgTop:imgBottom, imgLeft:imgRight] = data[randomArray[finalTime%len(randomArray)]+j]
-                        
-                        if (picture):
-                            cv2.imwrite(dirName + '/outputs/pictures/' + pName + '.png', frame)
+                            frame[img_top:img_bottom, img_left:img_right] = data[a_random[n_final_time%len(a_random)]+j]
+
+                        if b_picture:
+                            cv2.imwrite(s_dir_name + '/outputs/pictures/' + s_pic_name + '.png', frame)
 
                         j = j+1
-            if (video):
-                vidOut.write(frame)
+
+            if b_video:
+                vid_out.write(frame)
         else:
-            t = 0;
+            t = 0
 
         # Display the resulting image
         cv2.imshow('Video', frame)
@@ -309,4 +322,3 @@ if __name__ == "__main__":
     # Release handle to the webcam
     video_capture.release()
     cv2.destroyAllWindows()
-
