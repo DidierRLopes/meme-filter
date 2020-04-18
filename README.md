@@ -13,5 +13,8 @@ Some examples of runs are:
 
 ./didifilter.py --locationFolder=celebrities --caption='What celeb am I?' --max=2 -v --video="exampleVideo"
 
-Hope you have fun with it! Would be keen to see what have you used this for
+An example can be seen below,
 
+<img width="1145" alt="didifilterPic" src="https://user-images.githubusercontent.com/25267873/79651993-74f6aa00-81a9-11ea-8081-2abb7051d833.png">
+
+Hope you have fun with it! Would be keen to see what have you used this for
