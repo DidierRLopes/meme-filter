@@ -1,5 +1,7 @@
 # Didi Filter
 
+<img width="1145" alt="didifilterPic" src="https://user-images.githubusercontent.com/25267873/79651993-74f6aa00-81a9-11ea-8081-2abb7051d833.png">
+
 ## About
 
 This program is meant to be an advanced version of the known snapchat filter where there are random images spinning on top of people's heads. The main improvement is that you can not only select the images you want to choose from and the caption, but you can also play it with friends (recognizing more than 1 face at the same frame).
@@ -34,12 +36,10 @@ Some examples are:
 
 ![](example.gif)
 
-<img width="1145" alt="didifilterPic" src="https://user-images.githubusercontent.com/25267873/79651993-74f6aa00-81a9-11ea-8081-2abb7051d833.png">
 
+## Extra
 
-# Extra
-
-The good thing about this is that you can customize the final outcome. Here's me pranking my girlfriend with psyduck when the query was: "What celebrity am I?"
+The good thing about this is that you can customize the final outcome. Here's me pranking my girlfriend with a psyduck when the query was: "Who do I look like?"
 
 ![](meg_psyduck.gif)
 
