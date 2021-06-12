@@ -1,4 +1,4 @@
-# Didi Filter
+# Meme Filter
 
 <img width="1145" alt="didifilterPic" src="https://user-images.githubusercontent.com/25267873/79651993-74f6aa00-81a9-11ea-8081-2abb7051d833.png">
 
